@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { Application, Sprite, Graphics, Assets } from "pixi.js";
+import { Application, Assets, Sprite } from "pixi.js";
+import { useRouter } from "next/navigation";
 
 export default function Scene() {
   const router = useRouter();
@@ -10,83 +10,87 @@ export default function Scene() {
   const appRef = useRef<Application | null>(null);
 
   useEffect(() => {
-    const app = new Application();
-    appRef.current = app;
+    let destroyed = false;
 
-    const initApp = async () => {
+    const initPixi = async () => {
+      const app = new Application();
+      appRef.current = app;
+
+      // Ждём инициализации
       await app.init({
         resizeTo: window,
-        backgroundAlpha: 0,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
+        backgroundAlpha: 0
       });
 
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-        containerRef.current.appendChild(app.canvas);
-      }
+      if (destroyed) return;
+      if (!containerRef.current) return;
+
+      // Теперь canvas точно доступен
+      containerRef.current.appendChild(app.canvas);
 
       // Загружаем фон
-      await Assets.load("/img/background.png");
-      const bg = Sprite.from("/img/background.png");
+      const bgTexture = await Assets.load("/img/background.png");
+      const bg = new Sprite(bgTexture);
+      bg.anchor.set(0);
       app.stage.addChild(bg);
-
       const resizeBackground = () => {
-        const rw = window.innerWidth;
-        const rh = window.innerHeight;
-        const tw = bg.texture.width || 1;
-        const th = bg.texture.height || 1;
-        const scale = Math.max(rw / tw, rh / th);
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
+
+        const tw = bg.texture.width;
+        const th = bg.texture.height;
+
+        const scale = Math.max(screenW / tw, screenH / th);
+
         bg.scale.set(scale);
-        bg.x = (rw - bg.width) / 2;
-        bg.y = (rh - bg.height) / 2;
+        bg.x = (screenW - bg.width) / 2;
+        bg.y = (screenH - bg.height) / 2;
       };
-
       resizeBackground();
+      window.addEventListener("resize", resizeBackground);
 
-      // Кнопка в правом нижнем углу
-      const button = new Graphics();
-      const buttonWidth = 150;
-      const buttonHeight = 80;
+      // Создаём шар
+      const crystalTexture = await Assets.load("/img/CrystalBall.png");
+      const crystal = new Sprite(crystalTexture);
+      crystal.anchor.set(0.5);
+      crystal.x = window.innerWidth / 2 + 400;
+      crystal.y = window.innerHeight / 2 + 400;
+      crystal.eventMode = "static";
+      crystal.cursor = "pointer";
+      crystal.on("pointertap", () => {
+        router.push("/crystal");
+      });
 
-      // Можно сделать слегка видимую кнопку
-      button.beginFill(0x00ff00, 0.3); // зелёный с прозрачностью 0.3
-      button.drawRoundedRect(0, 0, buttonWidth, buttonHeight, 15);
-      button.endFill();
-
-      const updateButtonPosition = () => {
-        button.x = window.innerWidth - buttonWidth - 20; // 20px от края
-        button.y = window.innerHeight - buttonHeight - 20; // 20px от нижнего края
-      };
-      updateButtonPosition();
-
-      button.eventMode = "static";
-      button.cursor = "pointer";
-      button.on("pointertap", () => router.push("/crystal"));
-
-      app.stage.addChild(button);
-
-      // Обработчик ресайза
-      const handleResize = () => {
-        resizeBackground();
-        updateButtonPosition();
-      };
-      window.addEventListener("resize", handleResize);
-
-      (app as any).__sceneCleanup = { handleResize };
+      app.stage.addChild(crystal);
+      
+      // Подгонка при изменении окна
+      window.addEventListener("resize", () => {
+        bg.x = 0;
+        bg.y = 0;
+      });
     };
 
-    initApp();
+    initPixi();
 
     return () => {
-      const app = appRef.current;
-      if (app) {
-        const cleanup = (app as any).__sceneCleanup;
-        if (cleanup?.handleResize) window.removeEventListener("resize", cleanup.handleResize);
-        app.destroy(true, { children: true, texture: true });
+      destroyed = true;
+      if (appRef.current) {
+        appRef.current.destroy(true);
       }
     };
   }, [router]);
 
-  return <div ref={containerRef} style={{ width: "100vw", height: "100vh" }} />;
+return (
+  <div
+    ref={containerRef}
+    style={{
+      position: "fixed",
+      inset: 0,
+      width: "100vw",
+      height: "100vh",
+      overflow: "hidden",
+    }}
+  />
+);
+
 }
