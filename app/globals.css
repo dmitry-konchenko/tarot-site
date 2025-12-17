@@ -2,14 +2,16 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "GohuFont Powerline";
+  font-family: "PxPlus_IBM_VGA8";
 }
 @font-face {
-  font-family: "GohuFont Powerline"; 
-  src: url("/fonts/GohuFont-Powerline.ttf") format("truetype"); 
-  font-style: normal; 
-  font-weight: normal; 
-} 
+  font-family: 'PxPlus_IBM_VGA8';
+  src: url('/fonts/PxPlus_IBM_VGA8.woff2') format('woff2'),
+       url('/fonts/PxPlus_IBM_VGA8.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 body {
   background-color: #f8f5ff;
   color: #333;
