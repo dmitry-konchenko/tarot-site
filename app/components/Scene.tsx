@@ -20,12 +20,17 @@ export default function Scene() {
   const albumButtonsRef = useRef<PIXI.Container[]>([]);
   const albumTextsRef = useRef<PIXI.BitmapText[]>([]);
   const dialogBoxRef = useRef<PIXI.Sprite | null>(null);
-  const dialogTextRef = useRef<PIXI.BitmapText | null>(null);
+  const dialogTextRef = useRef<PIXI.Text | PIXI.BitmapText | null>(null);
 
   const albumCards = [
     "/img/TheFool.png",
+    "/img/TheMagican.png",
+    "/img/TheEmperor.png",
     "/img/TheLovers.png",
-    "/img/TheTower.png"
+    "/img/WheelOfFortune.png",
+    "/img/TheTower.png",
+    "/img/TheMoon.png",
+    "/img/TheSun.png",
   ];
 
   const cardData = [
@@ -36,17 +41,47 @@ export default function Scene() {
       reversedDescription: "Необдуманные решения, опрометчивость, легкомыслие."
     },
     {
+      name: "Маг",
+      reverseName: "Перевернутый Маг",
+      description: "Мастерство, воля и умение использовать ресурсы. Начало действия с полной уверенностью.",
+      reversedDescription: "Манипуляция, рассеянность воли, использование силы во вред."
+    },
+    {
+      name: "Император",
+      reverseName: "Перевернутый Император",
+      description: "Порядок, власть, структура и стабильность. Сила отца и правителя.",
+      reversedDescription: "Тирания, негибкость, злоупотребление властью, слабость воли."
+    },
+    {
       name: "Влюбленные",
       reverseName: "Перевернутые Влюбленные",
       description: "Гармония, партнерство, выбор, чувства и доверие.",
       reversedDescription: "Разлад, сомнения, неверность, трудный выбор."
     },
     {
+      name: "Колесо Фортуны",
+      reverseName: "Перевернутое Колесо Фортуны",
+      description: "Смена цикла, судьбоносный поворот, удача и изменения к лучшему.",
+      reversedDescription: "Неудача, сопротивление переменам, нарушение ритма судьбы."
+    },
+    {
       name: "Башня",
       reverseName: "Перевернутая Башня",
       description: "Внезапные перемены, разрушение старого, освобождение.",
       reversedDescription: "Затруднения в переменах, сопротивление, страх перед новой ситуацией."
-    }
+    },
+    {
+      name: "Луна",
+      reverseName: "Перевернутая Луна",
+      description: "Тайны, иллюзии, интуиция и скрытые страхи. Путь через тьму.",
+      reversedDescription: "Обман рассеивается, выход из заблуждений, преодоление страхов."
+    },
+    {
+      name: "Солнце",
+      reverseName: "Перевернутое Солнце",
+      description: "Радость, успех, ясность и витальность. Счастье и процветание.",
+      reversedDescription: "Самонадеянность, задержка успеха, временные трудности."
+    },
   ];
 
   // Расклады
@@ -98,13 +133,21 @@ export default function Scene() {
         "/img/OpenedAlbum.png",
         "/img/portrait.png",
         "/img/TheFool.png",
+        "/img/TheMagican.png",
+        "/img/TheEmperor.png",
         "/img/TheLovers.png",
+        "/img/WheelOfFortune.png",
         "/img/TheTower.png",
+        "/img/TheMoon.png",
+        "/img/TheSun.png",
         "/img/CardBack.png",
         "/img/DialogBox.png",
         "/img/TableCloseup.png",
+        "/img/FortuneTeller-closed-eye.png",
         "/fonts/PxPlus_IBM_VGA8.fnt",
       ]);
+
+      await document.fonts.load('28px "PxPlus_IBM_VGA8"');
 
       const scene = new PIXI.Container();
       app.stage.addChild(scene);
@@ -129,6 +172,24 @@ export default function Scene() {
       fortuneTeller.x = 960 * SCALE;
       fortuneTeller.y = 800 * SCALE;
       scene.addChild(fortuneTeller);
+
+      const closedEye = PIXI.Sprite.from("/img/FortuneTeller-closed-eye.png");
+      closedEye.anchor.set(0.5, 1);
+      closedEye.x = fortuneTeller.x;
+      closedEye.y = fortuneTeller.y;
+      closedEye.visible = false;
+      scene.addChild(closedEye);
+
+      const blink = (holdMs = 120) => {
+        closedEye.visible = true;
+        setTimeout(() => { closedEye.visible = false; }, holdMs);
+      };
+
+      const scheduleNextBlink = () => {
+        const delay = 3000 + Math.random() * 4000;
+        setTimeout(() => { blink(); scheduleNextBlink(); }, delay);
+      };
+      scheduleNextBlink();
 
       const flameFrames = [
         PIXI.Texture.from("/img/flame-1.png"),
@@ -169,19 +230,9 @@ export default function Scene() {
 
       // Интерактивы с именами для обучения
       createInteractive("/img/CrystalBall.png","/img/CrystalBall-outline.png",1600*SCALE,700*SCALE,0.5,0.5,()=>console.log("Crystal Ball"),"CrystalBall");
-      createInteractive("/img/DeckOfCards.png","/img/DeckOfCards-outline.png",600*SCALE,750*SCALE,0.5,0.5,()=>console.log("Deck"),"Deck");
+      createInteractive("/img/DeckOfCards.png","/img/DeckOfCards-outline.png",600*SCALE,750*SCALE,0.5,0.5,()=>showSpreadSelection(),"Deck");
       createInteractive("/img/GuestBook.png","/img/GuestBook-outline.png",60*SCALE,242*SCALE,0,1,()=>switchMode("book"),"GuestBook");
       createInteractive("/img/AlbumOfCards.png","/img/AlbumOfCards-outline.png",1720*SCALE,576*SCALE,0,1,()=>switchMode("album"),"Album");
-createInteractive(
-  "/img/DeckOfCards.png",
-  "/img/DeckOfCards-outline.png",
-  600*SCALE,
-  750*SCALE,
-  0.5,
-  0.5,
-  () => openTable(0), // стартует расклад "Карта дня"
-  "Deck"
-);
 
 
 
@@ -203,7 +254,7 @@ createInteractive(
 
       const createCloseButton = (label: string, x: number, y: number, callback: () => void, color: number = 0x000000) => {
         const btn = new PIXI.Container();
-        const text = new PIXI.BitmapText(label, { fontName: "PxPlus_IBM_VGA8", fontSize: 32 } as any);
+        const text = new PIXI.BitmapText({ text: label, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 32 } });
         text.tint = color;
         btn.addChild(text);
         const underline = new PIXI.Graphics();
@@ -270,14 +321,33 @@ createInteractive(
           btn.style.position = "absolute";
           btn.style.left = `${baseX}px`;
           btn.style.top = `${baseY + i * 160}px`;
-          btn.style.padding = "28px 56px";
-          btn.style.fontSize = "20px";
+          btn.style.padding = "22px 64px";
+          btn.style.fontSize = "22px";
+          btn.style.fontFamily = '"PxPlus_IBM_VGA8", monospace';
+          btn.style.letterSpacing = "4px";
+          btn.style.textTransform = "uppercase";
           btn.style.cursor = "pointer";
-          btn.style.background = "#d8a876";
-          btn.style.border = "2px solid #8B4513";
+          btn.style.color = "#d4a84b";
+          btn.style.background = "rgba(8,4,18,0.88)";
+          btn.style.border = "2px solid #6a3e10";
+          btn.style.boxShadow = "0 0 12px rgba(180,100,10,0.35), inset 0 0 8px rgba(0,0,0,0.6)";
+          btn.style.textShadow = "0 0 8px rgba(212,168,75,0.7)";
+          btn.style.outline = "none";
           btn.style.opacity = "0";
-          btn.style.transition = "all 0.3s ease";
-          setTimeout(() => (btn.style.opacity = "1"), 50 + i * 150);
+          btn.style.transition = "opacity 0.4s ease, box-shadow 0.3s ease, color 0.3s ease";
+          setTimeout(() => (btn.style.opacity = "1"), 50 + i * 200);
+
+          btn.addEventListener("mouseenter", () => {
+            btn.style.color = "#f5c96a";
+            btn.style.boxShadow = "0 0 22px rgba(212,168,75,0.6), inset 0 0 10px rgba(0,0,0,0.5)";
+            btn.style.border = "2px solid #c87020";
+          });
+          btn.addEventListener("mouseleave", () => {
+            btn.style.color = "#d4a84b";
+            btn.style.boxShadow = "0 0 12px rgba(180,100,10,0.35), inset 0 0 8px rgba(0,0,0,0.6)";
+            btn.style.border = "2px solid #6a3e10";
+          });
+
           inputsRef.current.push(btn);
           containerRef.current!.appendChild(btn);
 
@@ -316,14 +386,31 @@ createInteractive(
         submitBtn.style.position = "absolute";
         submitBtn.style.left = `${baseX}px`;
         submitBtn.style.top = `${baseY + fields.length * 90}px`;
-        submitBtn.style.padding = "28px 56px";
-        submitBtn.style.fontSize = "20px";
+        submitBtn.style.padding = "22px 64px";
+        submitBtn.style.fontSize = "22px";
+        submitBtn.style.fontFamily = '"PxPlus_IBM_VGA8", monospace';
+        submitBtn.style.letterSpacing = "4px";
+        submitBtn.style.textTransform = "uppercase";
         submitBtn.style.cursor = "pointer";
-        submitBtn.style.background = "#d8a876";
-        submitBtn.style.border = "2px solid #8B4513";
+        submitBtn.style.color = "#d4a84b";
+        submitBtn.style.background = "rgba(8,4,18,0.88)";
+        submitBtn.style.border = "2px solid #6a3e10";
+        submitBtn.style.boxShadow = "0 0 12px rgba(180,100,10,0.35), inset 0 0 8px rgba(0,0,0,0.6)";
+        submitBtn.style.textShadow = "0 0 8px rgba(212,168,75,0.7)";
+        submitBtn.style.outline = "none";
         submitBtn.style.opacity = "0";
-        submitBtn.style.transition = "all 0.3s ease";
+        submitBtn.style.transition = "opacity 0.4s ease, box-shadow 0.3s ease, color 0.3s ease";
         setTimeout(() => (submitBtn.style.opacity = "1"), 50 + fields.length * 150);
+        submitBtn.addEventListener("mouseenter", () => {
+          submitBtn.style.color = "#f5c96a";
+          submitBtn.style.boxShadow = "0 0 22px rgba(212,168,75,0.6), inset 0 0 10px rgba(0,0,0,0.5)";
+          submitBtn.style.border = "2px solid #c87020";
+        });
+        submitBtn.addEventListener("mouseleave", () => {
+          submitBtn.style.color = "#d4a84b";
+          submitBtn.style.boxShadow = "0 0 12px rgba(180,100,10,0.35), inset 0 0 8px rgba(0,0,0,0.6)";
+          submitBtn.style.border = "2px solid #6a3e10";
+        });
         inputsRef.current.push(submitBtn);
         containerRef.current!.appendChild(submitBtn);
 
@@ -344,7 +431,7 @@ createInteractive(
           "Частая карта: Не определено"
         ];
         stats.forEach((text, i) => {
-          const txt = new PIXI.BitmapText(text, { fontName: "PxPlus_IBM_VGA8", fontSize: 24 } as any);
+          const txt = new PIXI.BitmapText({ text, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
           txt.tint = 0x000000;
           txt.x = 800;
           txt.y = 300 + i * 50;
@@ -352,7 +439,7 @@ createInteractive(
           statsTextsRef.current.push(txt);
         });
 
-        const lastReadoutText = new PIXI.BitmapText("Последние расклады: (пока пусто)", { fontName: "PxPlus_IBM_VGA8", fontSize: 24 } as any);
+        const lastReadoutText = new PIXI.BitmapText({ text: "Последние расклады: (пока пусто)", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
         lastReadoutText.tint = 0x000000;
         lastReadoutText.x = 1350;
         lastReadoutText.y = 294;
@@ -372,7 +459,7 @@ createInteractive(
       // ---------- Кнопки и тексты альбома ----------
       const createAlbumButton = (label: string, x: number, y: number, callback: () => void) => {
         const btn = new PIXI.Container();
-        const text = new PIXI.BitmapText(label, { fontName: "PxPlus_IBM_VGA8", fontSize: 28 } as any);
+        const text = new PIXI.BitmapText({ text: label, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 28 } });
         text.tint = 0x000000;
         btn.addChild(text);
 
@@ -478,28 +565,28 @@ createInteractive(
         albumRightSprite.current = rightCards[0];
 
         // ---------- Текст ----------
-        const leftTitle = new PIXI.BitmapText(dataSource[index].name, { fontName: "PxPlus_IBM_VGA8", fontSize: 24 } as any);
+        const leftTitle = new PIXI.BitmapText({ text: dataSource[index].name, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
         leftTitle.tint = 0x000000;
         leftTitle.x = startX;
         leftTitle.y = startY + cardHeight + 20;
         uiLayer.addChild(leftTitle);
         albumTextsRef.current.push(leftTitle);
 
-        const leftDesc = new PIXI.BitmapText(dataSource[index].description, { fontName: "PxPlus_IBM_VGA8", fontSize: 20 } as any);
+        const leftDesc = new PIXI.BitmapText({ text: dataSource[index].description, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 20 } });
         leftDesc.tint = 0x000000;
         leftDesc.x = startX;
         leftDesc.y = startY + cardHeight + 50;
         uiLayer.addChild(leftDesc);
         albumTextsRef.current.push(leftDesc);
 
-        const rightTitle = new PIXI.BitmapText(dataSource[index].reverseName, { fontName: "PxPlus_IBM_VGA8", fontSize: 24 } as any);
+        const rightTitle = new PIXI.BitmapText({ text: dataSource[index].reverseName, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
         rightTitle.tint = 0x000000;
         rightTitle.x = startX + 1050;
         rightTitle.y = startY + cardHeight + 20;
         uiLayer.addChild(rightTitle);
         albumTextsRef.current.push(rightTitle);
 
-        const rightDesc = new PIXI.BitmapText(dataSource[index].reversedDescription, { fontName: "PxPlus_IBM_VGA8", fontSize: 20 } as any);
+        const rightDesc = new PIXI.BitmapText({ text: dataSource[index].reversedDescription, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 20 } });
         rightDesc.tint = 0x000000;
         rightDesc.x = startX + 1050;
         rightDesc.y = startY + cardHeight + 50;
@@ -526,8 +613,16 @@ createInteractive(
           dialogBoxRef.current = box;
         }
         if (!dialogTextRef.current) {
-          const txt = new PIXI.BitmapText(text, { fontName: "PxPlus_IBM_VGA8", fontSize: 28 } as any); // увеличили размер
-          txt.tint = 0xffffff; // белый цвет
+          const txt = new PIXI.Text({
+            text,
+            style: {
+              fontFamily: "PxPlus_IBM_VGA8, monospace",
+              fontSize: 28,
+              fill: 0xffffff,
+              wordWrap: true,
+              wordWrapWidth: 1800,
+            },
+          });
           txt.x = SCENE_WIDTH / 2 - 900;
           txt.y = SCENE_HEIGHT - 180;
           uiLayer.addChild(txt);
@@ -538,9 +633,9 @@ createInteractive(
       };
 
       const tutorialSteps = [
-        { name: "GuestBook", text: "Это книга гостей. Тут можно записать себя, и тогда я буду вести вашу статистику и записывать результаты раскладов." },
-        { name: "Deck", text: "Колода карт. Укажите на нее чтобы начать расклад." },
-        { name: "Album", text: "Альбом карт. В нем расписаны трактовки карт и все расклады, которые мы предоставляем" },
+        { name: "GuestBook", text: "Это книга гостей. Тут можно записать себя, и тогда я буду вести вашу статистику и записывать результаты раскладов.", blinkOnShow: true },
+        { name: "Deck", text: "Колода карт. Укажите на нее чтобы начать расклад.", blinkOnShow: false },
+        { name: "Album", text: "Альбом карт. В нем расписаны трактовки карт и все расклады, которые мы предоставляем", blinkOnShow: true },
       ];
 
 
@@ -556,13 +651,17 @@ createInteractive(
             if (dialogTextRef.current) dialogTextRef.current.destroy();
             return;
           }
-          const { name, text } = tutorialSteps[currentStep];
+          const { name, text, blinkOnShow } = tutorialSteps[currentStep];
           interactives.forEach(i => {
-            i.container.children[0].visible = i.name === name; // показываем outline только текущего
+            i.container.children[0].visible = i.name === name;
           });
+          if (blinkOnShow) blink(350);
           showDialog(text);
           currentStep++;
         };
+
+        // Блокируем интерактивные объекты пока не ответили на вопрос
+        interactives.forEach(i => { i.container.eventMode = "none"; });
 
         showDialog("Здравствуйте! В первый ли здесь вы раз?");
         const yesBtn = document.createElement("button");
@@ -585,9 +684,14 @@ createInteractive(
         noBtn.style.cursor = "pointer";
         containerRef.current!.appendChild(noBtn);
 
+        const unlockInteractives = () => {
+          interactives.forEach(i => { i.container.eventMode = "static"; });
+        };
+
         yesBtn.addEventListener("click", () => {
           yesBtn.remove();
           noBtn.remove();
+          unlockInteractives();
           // Задержка 2 секунды перед стартом обучения
           setTimeout(() => step(), 2000);
           window.addEventListener("click", step);
@@ -595,19 +699,16 @@ createInteractive(
         noBtn.addEventListener("click", () => {
           yesBtn.remove();
           noBtn.remove();
+          unlockInteractives();
           showDialog("Тогда жду, когда вы будете готовы взглянуть в свое будущее.");
       });
     };
 
       if (!sessionStorage.getItem("firstVisit")) {
-        startTutorial();
         sessionStorage.setItem("firstVisit", "true");
+        setTimeout(() => startTutorial(), 4700); // ждём конца анимации свечи (4000ms + 700ms fade)
       }
-      const openTable = (spreadIndex: number) => {
-  switchMode("table");
-  tableMode = true;
-  currentSpreadIndex = spreadIndex;
-
+      const cleanupOverlay = () => {
         uiLayer.removeChildren();
         inputsRef.current.forEach(el => el.remove());
         inputsRef.current = [];
@@ -623,48 +724,204 @@ createInteractive(
         albumTextsRef.current = [];
         albumButtonsRef.current.forEach(b => uiLayer.removeChild(b));
         albumButtonsRef.current = [];
+      };
 
-  // Добавляем TableCloseup как фон
-  uiLayer.addChild(tableCloseup);
+      const showSpreadSelection = () => {
+        cleanupOverlay();
+        let spreadPage = 0;
+        const totalPages = Math.ceil(spreads.length / 2);
 
-  // Отображаем карты расклада
-  const spread = spreads[spreadIndex];
-  const numCards = (() => {
-    switch (spread.name) {
-      case "Карта дня": return 1;
-      case "Триплет": return 3;
-      case "Лестница": return 5;
-      default: return 1;
-    }
-  })();
+        const makeNavButton = (label: string, x: number, y: number, onClick: () => void) => {
+          const btn = new PIXI.Container();
+          const txt = new PIXI.BitmapText({ text: label, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 28 } });
+          txt.tint = 0x000000;
+          const ul = new PIXI.Graphics();
+          ul.beginFill(0x000000);
+          ul.drawRect(0, txt.height + 2, txt.width, 2);
+          ul.endFill();
+          ul.visible = false;
+          btn.addChild(txt, ul);
+          btn.x = x; btn.y = y;
+          btn.eventMode = "static"; btn.cursor = "pointer";
+          btn.on("pointerover", () => (ul.visible = true));
+          btn.on("pointerout",  () => (ul.visible = false));
+          btn.on("pointerdown", onClick);
+          return btn;
+        };
 
-  const spacing = 250;
-  const startX = SCENE_WIDTH / 2 - ((numCards - 1) * spacing) / 2;
-  const y = SCENE_HEIGHT / 2;
+        const renderSpreadPage = () => {
+          uiLayer.removeChildren();
+          uiLayer.addChild(openedAlbum);
+          uiLayer.addChild(createCloseButton("ЗАКРЫТЬ", SCENE_WIDTH / 2 - 800, SCENE_HEIGHT / 2 - 350, () => switchMode("main")));
 
-  tableCards = [];
-  for (let i = 0; i < numCards; i++) {
-    const card = PIXI.Sprite.from("/img/CardBack.png");
-    card.anchor.set(0.5);
-    card.x = startX + i * spacing;
-    card.y = y;
-    card.width = 200;
-    card.height = 300;
-    card.eventMode = "static";
-    card.cursor = "pointer";
+          const pageXs = [500, 1560];
+          const fromIdx = spreadPage * 2;
+          const pageIndices = [fromIdx, fromIdx + 1].filter(idx => idx < spreads.length);
 
-    // Клик для переворота карты
-    card.on("pointerdown", () => {
-      card.texture = PIXI.Texture.from(albumCards[i % albumCards.length]);
-    });
+          pageIndices.forEach((spreadIdx, col) => {
+            const spread = spreads[spreadIdx];
+            const cx = pageXs[col];
 
-    uiLayer.addChild(card);
-    tableCards.push(card);
-  }
-  uiLayer.addChild(createCloseButton("ЗАКРЫТЬ", SCENE_WIDTH / 2 - 1200, SCENE_HEIGHT / 2 - 700, () => {
-    switchMode("main");
-  }, 0xffffff));
-};
+            const nc = spread.name === "Карта дня" ? 1 : spread.name === "Триплет" ? 3 : 5;
+            const cardW = 55, cardH = 82, cardSpacing = 68;
+
+            for (let c = 0; c < nc; c++) {
+              const preview = PIXI.Sprite.from("/img/CardBack.png");
+              preview.anchor.set(0, 0.5);
+              preview.width = cardW;
+              preview.height = cardH;
+              preview.x = cx + c * cardSpacing;
+              preview.y = SCENE_HEIGHT / 2 - 250;
+              uiLayer.addChild(preview);
+            }
+
+            const nameText = new PIXI.BitmapText({ text: spread.name, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 30 } });
+            nameText.tint = 0x000000;
+            nameText.x = cx;
+            nameText.y = SCENE_HEIGHT / 2 - 150;
+            uiLayer.addChild(nameText);
+
+            const descText = new PIXI.Text({
+              text: spread.description,
+              style: { fontFamily: "PxPlus_IBM_VGA8, monospace", fontSize: 20, fill: 0x000000, wordWrap: true, wordWrapWidth: 460 },
+            });
+            descText.x = cx;
+            descText.y = SCENE_HEIGHT / 2 - 100;
+            uiLayer.addChild(descText);
+
+            const btn = new PIXI.Container();
+            const btnText = new PIXI.BitmapText({ text: "[ НАЧАТЬ ]", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 28 } });
+            btnText.tint = 0x3a1a00;
+            btn.addChild(btnText);
+            btn.x = cx;
+            btn.y = SCENE_HEIGHT / 2 + 60;
+            btn.eventMode = "static"; btn.cursor = "pointer";
+            btn.on("pointerover", () => { btnText.tint = 0x8B4513; });
+            btn.on("pointerout",  () => { btnText.tint = 0x3a1a00; });
+            btn.on("pointerdown", () => openTable(spreadIdx));
+            uiLayer.addChild(btn);
+          });
+
+          if (spreadPage > 0) {
+            uiLayer.addChild(makeNavButton("Назад", 1150, 390, () => { spreadPage--; renderSpreadPage(); }));
+          }
+          if (spreadPage < totalPages - 1) {
+            uiLayer.addChild(makeNavButton("Далее", 1350, 390, () => { spreadPage++; renderSpreadPage(); }));
+          }
+        };
+
+        renderSpreadPage();
+      };
+
+      const openTable = (spreadIndex: number) => {
+        cleanupOverlay();
+        tableMode = true;
+        currentSpreadIndex = spreadIndex;
+
+        uiLayer.addChild(tableCloseup);
+
+        const spread = spreads[spreadIndex];
+        const numCards = (() => {
+          switch (spread.name) {
+            case "Карта дня": return 1;
+            case "Триплет": return 3;
+            case "Лестница": return 5;
+            default: return 1;
+          }
+        })();
+
+        // Случайный набор карт без повторов, с шансом переворота
+        const shuffled = [...albumCards].sort(() => Math.random() - 0.5);
+        const selectedCards = shuffled.slice(0, numCards);
+        const reversedFlags = selectedCards.map(() => Math.random() < 0.1);
+
+        const spacing = 250;
+        const startX = SCENE_WIDTH / 2 - ((numCards - 1) * spacing) / 2;
+        const y = SCENE_HEIGHT / 2;
+
+        tableCards = [];
+        for (let i = 0; i < numCards; i++) {
+          const card = PIXI.Sprite.from("/img/CardBack.png");
+          card.anchor.set(0.5);
+          card.x = startX + i * spacing;
+          card.y = y;
+          card.width = 200;
+          card.height = 300;
+          card.eventMode = "static";
+          card.cursor = "pointer";
+
+          const baseScaleX = card.scale.x;
+          let isFlipped = false;
+          let isAnimating = false;
+          let shakeTime = 0;
+
+          const shakeFn = (ticker: PIXI.Ticker) => {
+            shakeTime += ticker.deltaMS;
+            card.rotation = Math.sin(shakeTime / 80) * 0.05;
+          };
+
+          card.on("pointerover", () => {
+            if (!isAnimating && !isFlipped) {
+              shakeTime = 0;
+              app.ticker.add(shakeFn);
+            }
+          });
+
+          card.on("pointerout", () => {
+            app.ticker.remove(shakeFn);
+            if (!isFlipped) card.rotation = 0;
+          });
+
+          card.on("pointerdown", () => {
+            if (isFlipped || isAnimating) return;
+            isAnimating = true;
+            app.ticker.remove(shakeFn);
+            card.rotation = 0;
+
+            let elapsed = 0;
+            const halfDur = 180;
+            let swapped = false;
+            let newBaseScaleX = baseScaleX;
+
+            const flipFn = (ticker: PIXI.Ticker) => {
+              elapsed += ticker.deltaMS;
+
+              if (!swapped) {
+                const t = Math.min(elapsed / halfDur, 1);
+                card.scale.x = baseScaleX * (1 - t);
+                if (t >= 1) {
+                  card.texture = PIXI.Texture.from(selectedCards[i]);
+                  card.width = 200;
+                  card.height = 300;
+                  if (reversedFlags[i]) card.rotation = Math.PI;
+                  newBaseScaleX = card.scale.x;
+                  card.scale.x = 0;
+                  swapped = true;
+                  elapsed = 0;
+                }
+              } else {
+                const t = Math.min(elapsed / halfDur, 1);
+                card.scale.x = newBaseScaleX * t;
+                if (t >= 1) {
+                  card.scale.x = newBaseScaleX;
+                  isFlipped = true;
+                  isAnimating = false;
+                  app.ticker.remove(flipFn);
+                }
+              }
+            };
+
+            app.ticker.add(flipFn);
+          });
+
+          uiLayer.addChild(card);
+          tableCards.push(card);
+        }
+
+        uiLayer.addChild(createCloseButton("ЗАКРЫТЬ", SCENE_WIDTH / 2 - 1200, SCENE_HEIGHT / 2 - 700, () => {
+          switchMode("main");
+        }, 0xffffff));
+      };
 
 
       app.ticker.add(() => {
