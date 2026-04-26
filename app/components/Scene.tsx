@@ -23,14 +23,20 @@ export default function Scene() {
   const dialogTextRef = useRef<PIXI.Text | PIXI.BitmapText | null>(null);
 
   const albumCards = [
-    "/img/TheFool.png",
-    "/img/TheMagican.png",
-    "/img/TheEmperor.png",
-    "/img/TheLovers.png",
-    "/img/WheelOfFortune.png",
-    "/img/TheTower.png",
-    "/img/TheMoon.png",
-    "/img/TheSun.png",
+    "/img/TheFool.png",         // 0 — Дурак
+    "/img/TheMagican.png",      // 1 — Маг
+    "/img/TheHighPriestess.png",// 2 — Верховная Жрица
+    "/img/TheEmpress.png",      // 3 — Императрица
+    "/img/TheEmperor.png",      // 4 — Император
+    "/img/TheHierophant.png",   // 5 — Иерофант
+    "/img/TheLovers.png",       // 6 — Влюбленные
+    "/img/TheChariot.png",      // 7 — Колесница
+    "/img/Strenght.png",        // 8 — Сила
+    "/img/TheHermit.png",       // 9 — Отшельник
+    "/img/WheelOfFortune.png",  // 10 — Колесо Фортуны
+    "/img/TheTower.png",        // 16 — Башня
+    "/img/TheMoon.png",         // 18 — Луна
+    "/img/TheSun.png",          // 19 — Солнце
   ];
 
   const cardData = [
@@ -47,16 +53,52 @@ export default function Scene() {
       reversedDescription: "Манипуляция, рассеянность воли, использование силы во вред."
     },
     {
+      name: "Верховная Жрица",
+      reverseName: "Перевернутая Верховная Жрица",
+      description: "Интуиция, тайна, внутренняя мудрость и скрытое знание.",
+      reversedDescription: "Поверхностность, утаивание информации, игнорирование интуиции."
+    },
+    {
+      name: "Императрица",
+      reverseName: "Перевернутая Императрица",
+      description: "Изобилие, плодородие, творчество и материнская забота.",
+      reversedDescription: "Зависимость, творческий блок, сверхконтроль."
+    },
+    {
       name: "Император",
       reverseName: "Перевернутый Император",
       description: "Порядок, власть, структура и стабильность. Сила отца и правителя.",
       reversedDescription: "Тирания, негибкость, злоупотребление властью, слабость воли."
     },
     {
+      name: "Иерофант",
+      reverseName: "Перевернутый Иерофант",
+      description: "Традиции, духовное наставничество, институты и устои.",
+      reversedDescription: "Догматизм, слепое следование правилам, отказ от перемен."
+    },
+    {
       name: "Влюбленные",
       reverseName: "Перевернутые Влюбленные",
       description: "Гармония, партнерство, выбор, чувства и доверие.",
       reversedDescription: "Разлад, сомнения, неверность, трудный выбор."
+    },
+    {
+      name: "Колесница",
+      reverseName: "Перевернутая Колесница",
+      description: "Воля, победа, движение вперёд и контроль над ситуацией.",
+      reversedDescription: "Потеря контроля, агрессия, движение без цели."
+    },
+    {
+      name: "Сила",
+      reverseName: "Перевернутая Сила",
+      description: "Внутренняя сила, смелость, выдержка и укрощение инстинктов.",
+      reversedDescription: "Слабость воли, страх, потеря самообладания."
+    },
+    {
+      name: "Отшельник",
+      reverseName: "Перевернутый Отшельник",
+      description: "Уединение, внутренний поиск, мудрость и путь наставника.",
+      reversedDescription: "Изоляция, отчуждение, избегание общества."
     },
     {
       name: "Колесо Фортуны",
@@ -134,8 +176,14 @@ export default function Scene() {
         "/img/portrait.png",
         "/img/TheFool.png",
         "/img/TheMagican.png",
+        "/img/TheHighPriestess.png",
+        "/img/TheEmpress.png",
         "/img/TheEmperor.png",
+        "/img/TheHierophant.png",
         "/img/TheLovers.png",
+        "/img/TheChariot.png",
+        "/img/Strenght.png",
+        "/img/TheHermit.png",
         "/img/WheelOfFortune.png",
         "/img/TheTower.png",
         "/img/TheMoon.png",
@@ -282,6 +330,8 @@ export default function Scene() {
       const switchMode = (m: Mode) => {
         mode = m;
         uiLayer.removeChildren();
+        dialogBoxRef.current = null;
+        dialogTextRef.current = null;
         inputsRef.current.forEach(el => el.remove());
         inputsRef.current = [];
         statsTextsRef.current.forEach(el => uiLayer.removeChild(el));
@@ -311,7 +361,31 @@ export default function Scene() {
       };
 
       // ---------- Авторизация ----------
+      const isTokenValid = () => {
+        const token = localStorage.getItem("tarot_token");
+        if (!token) return false;
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          return payload.exp * 1000 > Date.now();
+        } catch {
+          return false;
+        }
+      };
+
+      const clearAuth = () => {
+        localStorage.removeItem("tarot_token");
+        localStorage.removeItem("tarot_user");
+      };
+
       const addAuthButtons = () => {
+        const saved = localStorage.getItem("tarot_user");
+        if (saved && isTokenValid()) {
+          const user = JSON.parse(saved);
+          showStats(user.name);
+          return;
+        }
+        if (saved) clearAuth();
+
         const labels = ["Войти", "Записаться"];
         const baseX = 1200;
         const baseY = 800;
@@ -414,12 +488,49 @@ export default function Scene() {
         inputsRef.current.push(submitBtn);
         containerRef.current!.appendChild(submitBtn);
 
-        submitBtn.addEventListener("click", () => {
+        submitBtn.addEventListener("click", async () => {
           const values = fields.map((_, idx) => (inputsRef.current[idx] as HTMLInputElement).value);
-          const name = isRegister ? values[0] : values[0];
-          inputsRef.current.forEach(el => el.remove());
-          inputsRef.current = [];
-          showStats(name);
+
+          if (values.some(v => !v.trim())) {
+            submitBtn.innerText = "Заполните все поля";
+            setTimeout(() => { submitBtn.innerText = isRegister ? "Записаться" : "Войти"; }, 2000);
+            return;
+          }
+
+          submitBtn.innerText = "...";
+          submitBtn.style.pointerEvents = "none";
+
+          try {
+            const body = isRegister
+              ? { name: values[0], login: values[1], password: values[2] }
+              : { login: values[0], password: values[1] };
+
+            const res = await fetch(`http://localhost:8080/api/${isRegister ? "register" : "login"}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              submitBtn.innerText = data.error || "Ошибка";
+              submitBtn.style.pointerEvents = "auto";
+              setTimeout(() => { submitBtn.innerText = isRegister ? "Записаться" : "Войти"; }, 2500);
+              return;
+            }
+
+            localStorage.setItem("tarot_token", data.token);
+            localStorage.setItem("tarot_user", JSON.stringify(data.user));
+
+            inputsRef.current.forEach(el => el.remove());
+            inputsRef.current = [];
+            showStats(data.user.name);
+          } catch {
+            submitBtn.innerText = "Нет связи с сервером";
+            submitBtn.style.pointerEvents = "auto";
+            setTimeout(() => { submitBtn.innerText = isRegister ? "Записаться" : "Войти"; }, 2500);
+          }
         });
       };
 
@@ -445,6 +556,14 @@ export default function Scene() {
         lastReadoutText.y = 294;
         uiLayer.addChild(lastReadoutText);
         lastReadoutsRef.current.push(lastReadoutText);
+
+        const logoutBtn = createCloseButton("Выйти", 800, 520, () => {
+          localStorage.removeItem("tarot_token");
+          localStorage.removeItem("tarot_user");
+          switchMode("book");
+        }, 0x000000);
+        uiLayer.addChild(logoutBtn);
+        statsTextsRef.current.push(logoutBtn as unknown as PIXI.BitmapText);
 
         // Portrait
         const portrait = PIXI.Sprite.from("/img/portrait.png");
@@ -632,6 +751,46 @@ export default function Scene() {
         }
       };
 
+      const splitIntoChunks = (text: string, maxLen: number): string[] => {
+        const sentences = text.match(/[^.!?\n]+[.!?\n]*/g) ?? [text];
+        const chunks: string[] = [];
+        let current = "";
+        for (const s of sentences) {
+          const trimmed = s.trim();
+          if (!trimmed) continue;
+          if (!current || current.length + 1 + trimmed.length <= maxLen) {
+            current = current ? current + " " + trimmed : trimmed;
+          } else {
+            chunks.push(current);
+            current = trimmed;
+          }
+        }
+        if (current) chunks.push(current);
+        return chunks.length > 0 ? chunks : [text];
+      };
+
+      const showDialogSequence = (text: string, onFinish?: () => void) => {
+        const chunks = splitIntoChunks(text, 250);
+        let idx = 0;
+
+        const advance = () => {
+          if (idx >= chunks.length) return;
+          const isLast = idx === chunks.length - 1;
+          showDialog(chunks[idx] + (isLast ? "" : "  ▶"));
+          idx++;
+          const handler = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName === "INPUT" || target.tagName === "BUTTON") return;
+            window.removeEventListener("click", handler);
+            if (isLast) onFinish?.();
+            else advance();
+          };
+          setTimeout(() => window.addEventListener("click", handler), 400);
+        };
+
+        advance();
+      };
+
       const tutorialSteps = [
         { name: "GuestBook", text: "Это книга гостей. Тут можно записать себя, и тогда я буду вести вашу статистику и записывать результаты раскладов.", blinkOnShow: true },
         { name: "Deck", text: "Колода карт. Укажите на нее чтобы начать расклад.", blinkOnShow: false },
@@ -704,12 +863,22 @@ export default function Scene() {
       });
     };
 
-      if (!sessionStorage.getItem("firstVisit")) {
-        sessionStorage.setItem("firstVisit", "true");
-        setTimeout(() => startTutorial(), 4700); // ждём конца анимации свечи (4000ms + 700ms fade)
+      if (!localStorage.getItem("hasVisitedBefore")) {
+        localStorage.setItem("hasVisitedBefore", "true");
+        setTimeout(() => startTutorial(), 4700);
+      } else {
+        const savedUser = localStorage.getItem("tarot_user");
+        if (savedUser && isTokenValid()) {
+          const user = JSON.parse(savedUser);
+          setTimeout(() => {
+            showDialog(`С возвращением, ${user.name}. Готовы узнать что готовит вам судьба?`);
+          }, 500);
+        }
       }
       const cleanupOverlay = () => {
         uiLayer.removeChildren();
+        dialogBoxRef.current = null;
+        dialogTextRef.current = null;
         inputsRef.current.forEach(el => el.remove());
         inputsRef.current = [];
         statsTextsRef.current.forEach(el => uiLayer.removeChild(el));
@@ -798,7 +967,7 @@ export default function Scene() {
             btn.eventMode = "static"; btn.cursor = "pointer";
             btn.on("pointerover", () => { btnText.tint = 0x8B4513; });
             btn.on("pointerout",  () => { btnText.tint = 0x3a1a00; });
-            btn.on("pointerdown", () => openTable(spreadIdx));
+            btn.on("pointerdown", () => askQuestion(spreadIdx));
             uiLayer.addChild(btn);
           });
 
@@ -813,7 +982,110 @@ export default function Scene() {
         renderSpreadPage();
       };
 
-      const openTable = (spreadIndex: number) => {
+      const getCardName = (path: string, reversed: boolean): string => {
+        const idx = albumCards.indexOf(path);
+        if (idx < 0) return path;
+        return reversed ? cardData[idx].reverseName : cardData[idx].name;
+      };
+
+      const askQuestion = (spreadIdx: number) => {
+        switchMode("main");
+
+        showDialog("Что вы хотите узнать?");
+
+        const sceneScale = Math.min(window.innerWidth / SCENE_WIDTH, window.innerHeight / SCENE_HEIGHT);
+        const stageX = (window.innerWidth - SCENE_WIDTH * sceneScale) / 2;
+        const stageY = (window.innerHeight - SCENE_HEIGHT * sceneScale) / 2;
+
+        // Inject placeholder colour (can't do pseudo-elements inline)
+        const styleEl = document.createElement("style");
+        styleEl.textContent = ".tarot-q::placeholder{color:rgba(255,255,255,0.38);}";
+        document.head.appendChild(styleEl);
+
+        // Input — right half of dialog, starts at scene x = SCENE_WIDTH/2 + 100
+        const inputLeft = stageX + (SCENE_WIDTH / 2 + 100) * sceneScale;
+        const input = document.createElement("input");
+        input.className = "tarot-q";
+        input.placeholder = "Задайте свой вопрос...";
+        input.style.position = "absolute";
+        input.style.left = `${inputLeft}px`;
+        input.style.top = `${stageY + (SCENE_HEIGHT - 177) * sceneScale}px`;
+        input.style.width = `${750 * sceneScale}px`;
+        input.style.padding = `${6 * sceneScale}px ${10 * sceneScale}px`;
+        input.style.fontSize = `${22 * sceneScale}px`;
+        input.style.fontFamily = '"PxPlus_IBM_VGA8", monospace';
+        input.style.background = "transparent";
+        input.style.border = "none";
+        input.style.borderBottom = "2px solid rgba(255,255,255,0.5)";
+        input.style.color = "#ffffff";
+        input.style.caretColor = "#ffffff";
+        input.style.outline = "none";
+        input.style.boxSizing = "border-box";
+        input.style.letterSpacing = "2px";
+        inputsRef.current.push(input);
+        containerRef.current!.appendChild(input);
+        setTimeout(() => input.focus(), 100);
+
+        // Spread name label above input
+        const spreadLabel = new PIXI.BitmapText({ text: `— ${spreads[spreadIdx].name} —`, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 22 } });
+        spreadLabel.tint = 0xaaaaaa;
+        spreadLabel.x = SCENE_WIDTH / 2 + 100;
+        spreadLabel.y = SCENE_HEIGHT - 208;
+        uiLayer.addChild(spreadLabel);
+
+        // [ НАЧАТЬ ] — right of input
+        const startBtn = new PIXI.Container();
+        const startText = new PIXI.BitmapText({ text: "[ НАЧАТЬ ]", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 32 } });
+        startText.tint = 0xffffff;
+        startBtn.addChild(startText);
+        startBtn.x = SCENE_WIDTH / 2 + 880;
+        startBtn.y = SCENE_HEIGHT - 182;
+        startBtn.eventMode = "static";
+        startBtn.cursor = "pointer";
+        startBtn.on("pointerover", () => { startText.tint = 0xffd700; });
+        startBtn.on("pointerout",  () => { startText.tint = 0xffffff; });
+        uiLayer.addChild(startBtn);
+
+        // < НАЗАД — below input
+        const backBtn = new PIXI.Container();
+        const backText = new PIXI.BitmapText({ text: "< НАЗАД", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 22 } });
+        backText.tint = 0xffffff;
+        backBtn.addChild(backText);
+        backBtn.x = SCENE_WIDTH / 2 + 100;
+        backBtn.y = SCENE_HEIGHT - 120;
+        backBtn.eventMode = "static";
+        backBtn.cursor = "pointer";
+        backBtn.on("pointerover", () => { backText.tint = 0xffd700; });
+        backBtn.on("pointerout",  () => { backText.tint = 0xffffff; });
+        backBtn.on("pointerdown", () => {
+          styleEl.remove();
+          inputsRef.current.forEach(el => el.remove());
+          inputsRef.current = [];
+          uiLayer.removeChildren();
+          dialogBoxRef.current = null;
+          dialogTextRef.current = null;
+          showSpreadSelection();
+        });
+        uiLayer.addChild(backBtn);
+
+        const startReading = () => {
+          const question = input.value.trim() || "Что меня ждёт?";
+          styleEl.remove();
+          inputsRef.current.forEach(el => el.remove());
+          inputsRef.current = [];
+          uiLayer.removeChildren();
+          dialogBoxRef.current = null;
+          dialogTextRef.current = null;
+          openTable(spreadIdx, question);
+        };
+
+        startBtn.on("pointerdown", startReading);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") startReading();
+        });
+      };
+
+      const openTable = (spreadIndex: number, question = "Что меня ждёт?") => {
         cleanupOverlay();
         tableMode = true;
         currentSpreadIndex = spreadIndex;
@@ -830,10 +1102,30 @@ export default function Scene() {
           }
         })();
 
-        // Случайный набор карт без повторов, с шансом переворота
         const shuffled = [...albumCards].sort(() => Math.random() - 0.5);
         const selectedCards = shuffled.slice(0, numCards);
-        const reversedFlags = selectedCards.map(() => Math.random() < 0.1);
+        const reversedFlags = selectedCards.map(() => Math.random() < 0.3);
+
+        let flippedCount = 0;
+        const onAllFlipped = async () => {
+          const cardNames = selectedCards.map((p, i) => getCardName(p, reversedFlags[i]));
+          showDialog("Думаю...");
+          const token = localStorage.getItem("tarot_token");
+          try {
+            const res = await fetch("http://localhost:8080/api/reading/ask", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({ spread: spread.name, question, cards: cardNames }),
+            });
+            const data = await res.json();
+            showDialogSequence(data.text ?? data.error ?? "Нет ответа", () => switchMode("main"));
+          } catch {
+            showDialog("Не удалось получить предсказание.");
+          }
+        };
 
         const spacing = 250;
         const startX = SCENE_WIDTH / 2 - ((numCards - 1) * spacing) / 2;
@@ -869,7 +1161,7 @@ export default function Scene() {
 
           card.on("pointerout", () => {
             app.ticker.remove(shakeFn);
-            if (!isFlipped) card.rotation = 0;
+            if (!isFlipped && !isAnimating) card.rotation = 0;
           });
 
           card.on("pointerdown", () => {
@@ -907,6 +1199,8 @@ export default function Scene() {
                   isFlipped = true;
                   isAnimating = false;
                   app.ticker.remove(flipFn);
+                  flippedCount++;
+                  if (flippedCount === numCards) onAllFlipped();
                 }
               }
             };

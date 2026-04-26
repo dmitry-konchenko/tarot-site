@@ -1,0 +1,43 @@
+### Регистрация
+POST http://localhost:8080/api/register
+Content-Type: application/json
+
+{
+  "name": "Дима",
+  "login": "dima",
+  "password": "123456"
+}
+
+### Логин
+POST http://localhost:8080/api/login
+Content-Type: application/json
+
+{
+  "login": "dima",
+  "password": "123456"
+}
+
+### Расклад (подставь токен из логина)
+POST http://localhost:8080/api/reading/ask
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc3NjM3MTQsInVzZXJfaWQiOjF9.rZlA8REDo1QhxKn4h-obIOkouTmPsFkxV6Q24SxB-ds
+
+{
+  "spread": "Триплет",
+  "question": "Что меня ждёт в ближайшее время?",
+  "cards": ["Дурак", "Луна", "Солнце"]
+}
+
+### Статистика
+GET http://localhost:8080/api/stats
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc3NjM3MTQsInVzZXJfaWQiOjF9.rZlA8REDo1QhxKn4h-obIOkouTmPsFkxV6Q24SxB-ds
+
+### AI расклад через Next.js
+POST http://localhost:3000/api/reading
+Content-Type: application/json
+
+{
+  "spread": "Триплет",
+  "question": "Что меня ждёт в ближайшее время?",
+  "cards": ["Дурак", "Луна", "Солнце"]
+}

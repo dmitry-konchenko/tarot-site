@@ -19,8 +19,7 @@ export default function HomePage() {
     const canvas = overlayRef.current;
     if (!canvas) return;
 
-    // Анимация только при первом визите за сессию
-    if (sessionStorage.getItem("firstVisit")) {
+    if (localStorage.getItem("hasVisitedBefore")) {
       canvas.style.display = "none";
       return;
     }
