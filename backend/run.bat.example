@@ -1,0 +1,10 @@
+@echo off
+set DB_HOST=localhost
+set DB_USER=postgres
+set DB_PASSWORD=YOUR_DB_PASSWORD
+set DB_NAME=tarotdb
+set DB_PORT=5432
+set JWT_SECRET=YOUR_JWT_SECRET
+set GODEBUG=netdns=cgo
+set GROQ_API_KEY=YOUR_GROQ_API_KEY
+go run cmd/server/main.go
