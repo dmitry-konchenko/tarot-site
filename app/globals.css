@@ -6,8 +6,7 @@
 }
 @font-face {
   font-family: 'PxPlus_IBM_VGA8';
-  src: url('/fonts/PxPlus_IBM_VGA8.woff2') format('woff2'),
-       url('/fonts/PxPlus_IBM_VGA8.ttf') format('truetype');
+  src: url('/fonts/PxPlus_IBM_VGA8.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }

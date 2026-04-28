@@ -34,9 +34,17 @@ export default function Scene() {
     "/img/Strenght.png",        // 8 — Сила
     "/img/TheHermit.png",       // 9 — Отшельник
     "/img/WheelOfFortune.png",  // 10 — Колесо Фортуны
+    "/img/Justice.png",         // 11 — Справедливость
+    "/img/TheHangedMan.png",    // 12 — Повешенный
+    "/img/Death.png",           // 13 — Смерть
+    "/img/Temperance.png",      // 14 — Умеренность
+    "/img/TheDevil.png",        // 15 — Дьявол
     "/img/TheTower.png",        // 16 — Башня
+    "/img/TheStar.png",         // 17 — Звезда
     "/img/TheMoon.png",         // 18 — Луна
     "/img/TheSun.png",          // 19 — Солнце
+    "/img/Judgement.png",       // 20 — Суд
+    "/img/TheWorld.png",        // 21 — Мир
   ];
 
   const cardData = [
@@ -107,10 +115,46 @@ export default function Scene() {
       reversedDescription: "Неудача, сопротивление переменам, нарушение ритма судьбы."
     },
     {
+      name: "Справедливость",
+      reverseName: "Перевернутая Справедливость",
+      description: "Равновесие, правда, закон и честное воздаяние.",
+      reversedDescription: "Несправедливость, предвзятость, уклонение от ответственности."
+    },
+    {
+      name: "Повешенный",
+      reverseName: "Перевернутый Повешенный",
+      description: "Добровольная жертва, пауза, иной взгляд на ситуацию и смирение.",
+      reversedDescription: "Бессмысленная жертва, откладывание, нежелание меняться."
+    },
+    {
+      name: "Смерть",
+      reverseName: "Перевернутая Смерть",
+      description: "Конец старого и начало нового. Трансформация и неизбежные перемены.",
+      reversedDescription: "Сопротивление переменам, застревание в прошлом, страх потерь."
+    },
+    {
+      name: "Умеренность",
+      reverseName: "Перевернутая Умеренность",
+      description: "Баланс, гармония, терпение и умелое сочетание противоположностей.",
+      reversedDescription: "Излишества, дисбаланс, нетерпение, конфликт интересов."
+    },
+    {
+      name: "Дьявол",
+      reverseName: "Перевернутый Дьявол",
+      description: "Привязанности, искушение, материализм и скрытые цепи.",
+      reversedDescription: "Освобождение от зависимости, разрыв оков, пробуждение."
+    },
+    {
       name: "Башня",
       reverseName: "Перевернутая Башня",
       description: "Внезапные перемены, разрушение старого, освобождение.",
       reversedDescription: "Затруднения в переменах, сопротивление, страх перед новой ситуацией."
+    },
+    {
+      name: "Звезда",
+      reverseName: "Перевернутая Звезда",
+      description: "Надежда, вдохновение, исцеление и вера в будущее.",
+      reversedDescription: "Разочарование, потеря веры, отчаяние, уныние."
     },
     {
       name: "Луна",
@@ -123,6 +167,18 @@ export default function Scene() {
       reverseName: "Перевернутое Солнце",
       description: "Радость, успех, ясность и витальность. Счастье и процветание.",
       reversedDescription: "Самонадеянность, задержка успеха, временные трудности."
+    },
+    {
+      name: "Суд",
+      reverseName: "Перевернутый Суд",
+      description: "Пробуждение, призыв, обновление и воздаяние за прошлое.",
+      reversedDescription: "Самокритика, страх суда, промедление с важным решением."
+    },
+    {
+      name: "Мир",
+      reverseName: "Перевернутый Мир",
+      description: "Завершение, целостность, достижение цели и торжество духа.",
+      reversedDescription: "Незавершённость, откладывание финала, неудовлетворённость результатом."
     },
   ];
 
@@ -173,7 +229,7 @@ export default function Scene() {
         "/img/List-outline.png",
         "/img/OpenedBook.png",
         "/img/OpenedAlbum.png",
-        "/img/portrait.png",
+        "/img/Portrait.png",
         "/img/TheFool.png",
         "/img/TheMagican.png",
         "/img/TheHighPriestess.png",
@@ -185,9 +241,17 @@ export default function Scene() {
         "/img/Strenght.png",
         "/img/TheHermit.png",
         "/img/WheelOfFortune.png",
+        "/img/Justice.png",
+        "/img/TheHangedMan.png",
+        "/img/Death.png",
+        "/img/Temperance.png",
+        "/img/TheDevil.png",
         "/img/TheTower.png",
+        "/img/TheStar.png",
         "/img/TheMoon.png",
         "/img/TheSun.png",
+        "/img/Judgement.png",
+        "/img/TheWorld.png",
         "/img/CardBack.png",
         "/img/DialogBox.png",
         "/img/TableCloseup.png",
@@ -324,6 +388,26 @@ export default function Scene() {
       const closeBookBtn = createCloseButton("ЗАКРЫТЬ", SCENE_WIDTH / 2 - 700, SCENE_HEIGHT / 2 - 425, () => switchMode("main"));
       const closeAlbumBtn = createCloseButton("ЗАКРЫТЬ", SCENE_WIDTH / 2 - 800, SCENE_HEIGHT / 2 - 350, () => switchMode("main"));
 
+      const toCSS = (sx: number, sy: number) => {
+        const s = Math.min(window.innerWidth / SCENE_WIDTH, window.innerHeight / SCENE_HEIGHT);
+        const ox = (window.innerWidth - SCENE_WIDTH * s) / 2;
+        const oy = (window.innerHeight - SCENE_HEIGHT * s) / 2;
+        return { left: Math.round(ox + sx * s), top: Math.round(oy + sy * s), s };
+      };
+
+      const wrapText = (text: string, maxChars: number): string[] => {
+        const words = text.split(" ");
+        const lines: string[] = [];
+        let cur = "";
+        for (const w of words) {
+          const test = cur ? cur + " " + w : w;
+          if (test.length > maxChars && cur) { lines.push(cur); cur = w; }
+          else cur = test;
+        }
+        if (cur) lines.push(cur);
+        return lines;
+      };
+
       type Mode = "main" | "book" | "album" | "table";
       let mode: Mode = "main";
 
@@ -387,16 +471,15 @@ export default function Scene() {
         if (saved) clearAuth();
 
         const labels = ["Войти", "Записаться"];
-        const baseX = 1200;
-        const baseY = 800;
         labels.forEach((label, i) => {
+          const { left, top, s } = toCSS(820, 520 + i * 130);
           const btn = document.createElement("button");
           btn.innerText = label;
           btn.style.position = "absolute";
-          btn.style.left = `${baseX}px`;
-          btn.style.top = `${baseY + i * 160}px`;
-          btn.style.padding = "22px 64px";
-          btn.style.fontSize = "22px";
+          btn.style.left = `${left}px`;
+          btn.style.top = `${top}px`;
+          btn.style.padding = `${Math.round(22 * s)}px ${Math.round(64 * s)}px`;
+          btn.style.fontSize = `${Math.round(22 * s)}px`;
           btn.style.fontFamily = '"PxPlus_IBM_VGA8", monospace';
           btn.style.letterSpacing = "4px";
           btn.style.textTransform = "uppercase";
@@ -434,20 +517,19 @@ export default function Scene() {
         inputsRef.current = [];
 
         const fields = isRegister ? ["Имя", "Логин", "Пароль"] : ["Логин", "Пароль"];
-        const baseX = 1200;
-        const baseY = 800;
 
         fields.forEach((placeholder, i) => {
+          const { left, top, s } = toCSS(820, 520 + i * 90);
           const input = document.createElement("input");
           input.placeholder = placeholder;
           input.style.position = "absolute";
-          input.style.left = `${baseX}px`;
-          input.style.top = `${baseY + i * 90}px`;
-          input.style.padding = "28px";
+          input.style.left = `${left}px`;
+          input.style.top = `${top}px`;
+          input.style.padding = `${Math.round(28 * s)}px`;
           input.style.border = "2px solid #8B4513";
           input.style.background = "#d8a876";
           input.style.color = "#000";
-          input.style.fontSize = "18px";
+          input.style.fontSize = `${Math.round(18 * s)}px`;
           input.style.opacity = "0";
           input.style.transition = "all 0.3s ease";
           setTimeout(() => (input.style.opacity = "1"), 50 + i * 150);
@@ -455,13 +537,14 @@ export default function Scene() {
           containerRef.current!.appendChild(input);
         });
 
+        const { left: sl, top: st, s: ss } = toCSS(820, 520 + fields.length * 90);
         const submitBtn = document.createElement("button");
         submitBtn.innerText = isRegister ? "Записаться" : "Войти";
         submitBtn.style.position = "absolute";
-        submitBtn.style.left = `${baseX}px`;
-        submitBtn.style.top = `${baseY + fields.length * 90}px`;
-        submitBtn.style.padding = "22px 64px";
-        submitBtn.style.fontSize = "22px";
+        submitBtn.style.left = `${sl}px`;
+        submitBtn.style.top = `${st}px`;
+        submitBtn.style.padding = `${Math.round(22 * ss)}px ${Math.round(64 * ss)}px`;
+        submitBtn.style.fontSize = `${Math.round(22 * ss)}px`;
         submitBtn.style.fontFamily = '"PxPlus_IBM_VGA8", monospace';
         submitBtn.style.letterSpacing = "4px";
         submitBtn.style.textTransform = "uppercase";
@@ -534,30 +617,30 @@ export default function Scene() {
         });
       };
 
-      const showStats = (userName: string) => {
-        const stats = [
-          `Имя: ${userName}`,
-          "Расклады проведено: 0",
-          "Самый частый расклад: Не определено",
-          "Частая карта: Не определено"
-        ];
-        stats.forEach((text, i) => {
+      const showStats = async (userName: string) => {
+        const makeStat = (text: string, y: number) => {
           const txt = new PIXI.BitmapText({ text, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
           txt.tint = 0x000000;
           txt.x = 800;
-          txt.y = 300 + i * 50;
+          txt.y = y;
           uiLayer.addChild(txt);
           statsTextsRef.current.push(txt);
-        });
+          return txt;
+        };
 
-        const lastReadoutText = new PIXI.BitmapText({ text: "Последние расклады: (пока пусто)", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
-        lastReadoutText.tint = 0x000000;
-        lastReadoutText.x = 1350;
-        lastReadoutText.y = 294;
-        uiLayer.addChild(lastReadoutText);
-        lastReadoutsRef.current.push(lastReadoutText);
+        makeStat(`Имя: ${userName}`, 300);
+        const totalTxt   = makeStat("Расклады: ...", 350);
+        const topTxt     = makeStat("Любимый расклад: ...", 400);
+        const topCardTxt = makeStat("Любимая карта: ...", 450);
 
-        const logoutBtn = createCloseButton("Выйти", 800, 520, () => {
+        const recentTitle = new PIXI.BitmapText({ text: "Последние расклады:", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 24 } });
+        recentTitle.tint = 0x000000;
+        recentTitle.x = 1350;
+        recentTitle.y = 294;
+        uiLayer.addChild(recentTitle);
+        lastReadoutsRef.current.push(recentTitle);
+
+        const logoutBtn = createCloseButton("Выйти", 800, 540, () => {
           localStorage.removeItem("tarot_token");
           localStorage.removeItem("tarot_user");
           switchMode("book");
@@ -565,14 +648,106 @@ export default function Scene() {
         uiLayer.addChild(logoutBtn);
         statsTextsRef.current.push(logoutBtn as unknown as PIXI.BitmapText);
 
-        // Portrait
-        const portrait = PIXI.Sprite.from("/img/portrait.png");
+        const portrait = PIXI.Sprite.from("/img/Portrait.png");
         portrait.x = 600;
         portrait.y = 350;
         portrait.width = 120;
         portrait.height = 120;
         uiLayer.addChild(portrait);
         portraitRef.current = portrait;
+
+        try {
+          const token = localStorage.getItem("tarot_token") || "";
+          const resp = await fetch("http://localhost:8080/api/stats", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await resp.json();
+
+          totalTxt.text   = `Расклады: ${data.total ?? 0}`;
+          topTxt.text     = `Любимый расклад: ${data.top_spread || "нет данных"}`;
+          topCardTxt.text = `Любимая карта: ${data.top_card ? getCardName(data.top_card, false) : "нет данных"}`;
+
+          type ReadingRecord = { id: number; spread: string; question: string; cards: string; answer: string; created_at: string };
+          const recent: ReadingRecord[] = data.recent ?? [];
+          if (recent.length === 0) {
+            const noData = new PIXI.BitmapText({ text: "(пока пусто)", style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 20 } });
+            noData.tint = 0x000000;
+            noData.x = 1350;
+            noData.y = 334;
+            uiLayer.addChild(noData);
+            lastReadoutsRef.current.push(noData);
+          } else {
+            recent.slice(0, 5).forEach((r, i) => {
+              const date = new Date(r.created_at).toLocaleDateString("ru-RU");
+              const q = r.question.length > 20 ? r.question.slice(0, 20) + "…" : r.question;
+              const line = new PIXI.BitmapText({ text: `▶ ${date}  ${r.spread}: ${q}`, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: 18 } });
+              line.tint = 0x000000;
+              line.x = 1350;
+              line.y = 334 + i * 36;
+              line.eventMode = "static";
+              line.cursor = "pointer";
+              line.on("pointerover", () => { line.tint = 0x4a2a00; });
+              line.on("pointerout",  () => { line.tint = 0x000000; });
+              line.on("pointerdown", () => showReadingDetail(r, userName));
+              uiLayer.addChild(line);
+              lastReadoutsRef.current.push(line);
+            });
+          }
+        } catch {
+          totalTxt.text = "Расклады: нет связи";
+        }
+      };
+
+      const refreshBookContent = () => {
+        statsTextsRef.current.forEach(el => uiLayer.removeChild(el));
+        statsTextsRef.current = [];
+        lastReadoutsRef.current.forEach(el => uiLayer.removeChild(el));
+        lastReadoutsRef.current = [];
+        if (portraitRef.current) { uiLayer.removeChild(portraitRef.current); portraitRef.current.destroy(); portraitRef.current = null; }
+        inputsRef.current.forEach(el => el.remove());
+        inputsRef.current = [];
+        addAuthButtons();
+      };
+
+      const showReadingDetail = (r: { spread: string; question: string; cards: string; answer: string; created_at: string }, userName: string) => {
+        statsTextsRef.current.forEach(el => uiLayer.removeChild(el));
+        statsTextsRef.current = [];
+        lastReadoutsRef.current.forEach(el => uiLayer.removeChild(el));
+        lastReadoutsRef.current = [];
+        if (portraitRef.current) { uiLayer.removeChild(portraitRef.current); portraitRef.current.destroy(); portraitRef.current = null; }
+        inputsRef.current.forEach(el => el.remove());
+        inputsRef.current = [];
+
+        const add = (text: string, x: number, y: number, size: number) => {
+          const t = new PIXI.BitmapText({ text, style: { fontFamily: "PxPlus_IBM_VGA8", fontSize: size } });
+          t.tint = 0x000000;
+          t.x = x; t.y = y;
+          uiLayer.addChild(t);
+          statsTextsRef.current.push(t);
+          return t;
+        };
+
+        const date = new Date(r.created_at).toLocaleDateString("ru-RU");
+        add(`${r.spread}  ·  ${date}`, 620, 330, 22);
+
+        add("Вопрос:", 620, 375, 20);
+        const qLines = wrapText(r.question, 38);
+        qLines.forEach((line, i) => add(line, 620, 405 + i * 28, 18));
+
+        const cardsY = 405 + qLines.length * 28 + 24;
+        add("Карты:", 620, cardsY, 20);
+        r.cards.split(", ").forEach((path, i) => {
+          add(`• ${getCardName(path.trim(), false)}`, 640, cardsY + 30 + i * 26, 18);
+        });
+
+        const backBtn = createCloseButton("← Назад", 620, 820, () => refreshBookContent(), 0x000000);
+        uiLayer.addChild(backBtn);
+        statsTextsRef.current.push(backBtn as unknown as PIXI.BitmapText);
+
+        add("Трактовка:", 1380, 270, 22);
+        const cleanAnswer = (r.answer || "(трактовка не сохранена)").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+        const answerLines = wrapText(cleanAnswer, 48);
+        answerLines.forEach((line, i) => add(line, 1380, 310 + i * 34, 18));
       };
 
       // ---------- Кнопки и тексты альбома ----------

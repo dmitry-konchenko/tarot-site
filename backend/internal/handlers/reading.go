@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"tarot-backend/internal/db"
@@ -30,21 +32,21 @@ func ReadingAsk(c *gin.Context) {
 
 	userID := getUserID(c)
 
-	reading := models.Reading{
-		UserID:   userID,
-		Spread:   req.Spread,
-		Question: req.Question,
-		Cards:    strings.Join(req.Cards, ", "),
-	}
-	db.DB.Create(&reading)
-
 	prompt := buildPrompt(req.Spread, req.Question, req.Cards)
-
 	text, err := callGroq(prompt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	reading := models.Reading{
+		UserID:   userID,
+		Spread:   req.Spread,
+		Question: req.Question,
+		Cards:    strings.Join(req.Cards, ", "),
+		Answer:   text,
+	}
+	db.DB.Create(&reading)
 
 	c.JSON(http.StatusOK, gin.H{"text": text})
 }
@@ -75,9 +77,30 @@ func GetStats(c *gin.Context) {
 		Limit(1).
 		Scan(&topSpread)
 
+	var allReadings []models.Reading
+	db.DB.Where("user_id = ?", userID).Select("cards").Find(&allReadings)
+	cardCounts := map[string]int{}
+	for _, rd := range allReadings {
+		for _, card := range strings.Split(rd.Cards, ", ") {
+			card = strings.TrimSpace(card)
+			if card != "" {
+				cardCounts[card]++
+			}
+		}
+	}
+	topCard := ""
+	topCardCount := 0
+	for card, count := range cardCounts {
+		if count > topCardCount {
+			topCard = card
+			topCardCount = count
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"total":      total,
 		"top_spread": topSpread.Spread,
+		"top_card":   topCard,
 		"recent":     readings,
 	})
 }
@@ -119,9 +142,8 @@ func buildPrompt(spread, question string, cards []string) string {
 func callGroq(prompt string) (string, error) {
 	apiKey := strings.TrimSpace(os.Getenv("GROQ_API_KEY"))
 
-	// Записываем тело запроса во временный файл — избегаем проблем с экранированием
 	reqBody := map[string]interface{}{
-		"model":  "llama-3.1-8b-instant",
+		"model":  "meta-llama/llama-4-scout-17b-16e-instruct",
 		"stream": false,
 		"messages": []map[string]string{
 			{"role": "user", "content": prompt},
@@ -137,34 +159,34 @@ func callGroq(prompt string) (string, error) {
 	tmpFile.Write(reqBytes)
 	tmpFile.Close()
 
-	outFile, err := os.CreateTemp("", "groq-out-*.txt")
-	if err != nil {
-		return "", err
-	}
-	outPath := outFile.Name()
-	outFile.Close()
-	defer os.Remove(outPath)
-
-	psScript := fmt.Sprintf(`
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		psScript := fmt.Sprintf(`
 $body = Get-Content -Path '%s' -Raw -Encoding UTF8
 $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 $client = New-Object Net.WebClient
 $client.Headers.Add("Authorization", "Bearer %s")
 $client.Headers.Add("Content-Type", "application/json")
 $bytes = $client.UploadData("https://api.groq.com/openai/v1/chat/completions", "POST", $bodyBytes)
-[System.IO.File]::WriteAllBytes('%s', $bytes)
-`, tmpFile.Name(), apiKey, outPath)
-
-	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psScript)
-	errOut, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("powershell error: %w — %s", err, string(errOut))
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Write-Output ([System.Text.Encoding]::UTF8.GetString($bytes))
+`, tmpFile.Name(), apiKey)
+		cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psScript)
+	} else {
+		cmd = exec.Command("curl", "-s", "-X", "POST",
+			"https://api.groq.com/openai/v1/chat/completions",
+			"-H", "Authorization: Bearer "+apiKey,
+			"-H", "Content-Type: application/json",
+			"--data-binary", "@"+tmpFile.Name(),
+		)
 	}
 
-	resultBytes, err := os.ReadFile(outPath)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		log.Printf("callGroq error: %v — output: %s", err, string(out))
+		return "", fmt.Errorf("callGroq error: %w — %s", err, string(out))
 	}
+	log.Printf("callGroq response: %s", string(out))
 
 	var result struct {
 		Choices []struct {
@@ -173,8 +195,8 @@ $bytes = $client.UploadData("https://api.groq.com/openai/v1/chat/completions", "
 			} `json:"message"`
 		} `json:"choices"`
 	}
-	if err := json.Unmarshal(resultBytes, &result); err != nil {
-		return "", fmt.Errorf("json parse error: %w — body: %s", err, string(resultBytes))
+	if err := json.Unmarshal(out, &result); err != nil {
+		return "", fmt.Errorf("json parse error: %w — body: %s", err, string(out))
 	}
 	if len(result.Choices) == 0 {
 		return "", fmt.Errorf("пустой ответ")
